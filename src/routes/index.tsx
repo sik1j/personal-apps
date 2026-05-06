@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
+import { useNow } from "@/hooks/useNow";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import {
+  millisToSecondsCeil,
+  millisToSecondsFloor,
+  addSession,
+} from "./-utils";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -11,48 +18,12 @@ type Session =
   | { type: "cancelled"; remainingMillis: number }
   | { type: "overtime"; overTimeFocusedMillis: number };
 
-function useNow(intervalMs: number = 500) {
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, intervalMs);
-
-    return () => clearInterval(interval);
-  }, [intervalMs]);
-
-  return now;
-}
-
-function useLocalStorage<T>(key: string, defaultValue: T) {
-  // 1. Get initial value from storage or use default
-  const [value, setValue] = useState<T>(() => {
-    const saved = localStorage.getItem(key);
-    return saved !== null ? JSON.parse(saved) : defaultValue;
-  });
-
-  // 2. Update localStorage whenever value changes
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
-
-function millisToSecondsCeil(millis: number) {
-  return Math.ceil(millis / 1000);
-}
-
-function millisToSecondsFloor(millis: number) {
-  return Math.floor(millis / 1000);
-}
-
 function TimeDisplay({ timeSeconds }: { timeSeconds: number }) {
-  const minsDisplay = Math.floor(timeSeconds / 60)
+  const safeSeconds = Math.max(0, timeSeconds);
+  const minsDisplay = Math.floor(safeSeconds / 60)
     .toString()
     .padStart(2, "0");
-  const secsDisplay = (timeSeconds % 60).toString().padStart(2, "0");
+  const secsDisplay = (safeSeconds % 60).toString().padStart(2, "0");
   const timeString = `${minsDisplay}:${secsDisplay}`;
   return <div>{timeString}</div>;
 }
@@ -115,14 +86,14 @@ function Running({
         <TimeDisplay timeSeconds={timeRemainingSeconds} />
       </div>
 
-      <Button onClick={() => pauseTimer(endAtMillis - Date.now())}>
+      <Button onClick={() => pauseTimer(Math.max(0, endAtMillis - Date.now()))}>
         <Pause />
       </Button>
       <Button
         onClick={() =>
           endSession({
             type: "cancelled",
-            remainingMillis: endAtMillis - Date.now(),
+            remainingMillis: Math.max(0, endAtMillis - Date.now()),
           })
         }
       >
@@ -202,7 +173,7 @@ function FocusTimer() {
     status: "setting-goal",
   });
 
-  const [goalSeconds, setGoalSeconds] = useLocalStorage("goalSeconds", 5);
+  const [goalSeconds, setGoalSeconds] = useLocalStorage("goalSeconds", 25 * 60);
 
   const gotoOvertime = useCallback(
     (currentTimeMillis: number) =>
@@ -228,6 +199,8 @@ function FocusTimer() {
         break;
       }
     }
+
+    addSession(Date.now(), focusedMillis);
 
     setAppState({
       status: "setting-goal",
