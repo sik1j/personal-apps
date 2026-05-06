@@ -21,11 +21,26 @@ function useNow(intervalMs: number = 500) {
   return now;
 }
 
-function millisToSecondsCountDown(millis: number) {
+function useLocalStorage<T>(key: string, defaultValue: T) {
+  // 1. Get initial value from storage or use default
+  const [value, setValue] = useState<T>(() => {
+    const saved = localStorage.getItem(key);
+    return saved !== null ? JSON.parse(saved) : defaultValue;
+  });
+
+  // 2. Update localStorage whenever value changes
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue] as const;
+}
+
+function millisToSecondsCeil(millis: number) {
   return Math.ceil(millis / 1000);
 }
 
-function millisToSecondsCountUp(millis: number) {
+function millisToSecondsFloor(millis: number) {
   return Math.floor(millis / 1000);
 }
 
@@ -82,7 +97,7 @@ function Running({
 }) {
   const now = useNow();
   const remainingMillis = Math.max(0, endAtMillis - now);
-  const timeRemainingSeconds = millisToSecondsCountDown(remainingMillis);
+  const timeRemainingSeconds = millisToSecondsCeil(remainingMillis);
 
   useEffect(() => {
     if (timeRemainingSeconds <= 0) {
@@ -125,7 +140,7 @@ function Paused({
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="flex items-center gap-2">
-        <TimeDisplay timeSeconds={millisToSecondsCountDown(remainingMillis)} />
+        <TimeDisplay timeSeconds={millisToSecondsCeil(remainingMillis)} />
       </div>
 
       <Button onClick={() => resumeTimer(Date.now() + remainingMillis)}>
@@ -156,7 +171,7 @@ function Overtime({
     <div>
       +
       <TimeDisplay
-        timeSeconds={millisToSecondsCountUp(Date.now() - overTimeStartMillis)}
+        timeSeconds={millisToSecondsFloor(Date.now() - overTimeStartMillis)}
       />
       <Button
         onClick={() =>
@@ -172,18 +187,18 @@ function Overtime({
   );
 }
 
-type AppState =
+type TimerState =
   | { status: "setting-goal" }
   | { status: "running"; endAtMillis: number }
   | { status: "paused"; remainingMillis: number }
   | { status: "overtime"; overTimeStartMillis: number };
 
-function App() {
-  const [appState, setAppState] = useState<AppState>({
+function FocusTimer() {
+  const [appState, setAppState] = useState<TimerState>({
     status: "setting-goal",
   });
 
-  const [goalSeconds, setGoalSeconds] = useState(5);
+  const [goalSeconds, setGoalSeconds] = useLocalStorage("goalSeconds", 5);
 
   const gotoOvertime = useCallback(
     (currentTimeMillis: number) =>
@@ -213,7 +228,8 @@ function App() {
     setAppState({
       status: "setting-goal",
     });
-    console.log("focusedMillis", focusedMillis / 1000);
+
+    console.log("focusedSeconds", millisToSecondsFloor(focusedMillis));
     return focusedMillis;
   }
 
@@ -271,6 +287,10 @@ function App() {
       return _exhaustiveCheck;
     }
   }
+}
+
+function App() {
+  return <FocusTimer />;
 }
 
 export default App;
