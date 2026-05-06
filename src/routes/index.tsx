@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import "./App.css";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/")({
+  component: RouteComponent,
+});
 
 type Session =
   | { type: "cancelled"; remainingMillis: number }
@@ -289,8 +293,6 @@ function FocusTimer() {
   }
 }
 
-function App() {
+function RouteComponent() {
   return <FocusTimer />;
 }
-
-export default App;
