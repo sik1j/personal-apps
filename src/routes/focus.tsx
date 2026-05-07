@@ -35,11 +35,14 @@ function RouteComponent() {
           <NavigationMenuList className="gap-2">
             {links.map((link) => (
               <NavigationMenuItem key={link.to}>
-                <Link to={link.to}>
-                  <NavigationMenuLink className="size-14 ">
-                    <link.icon className="mx-auto" />
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink
+                  className="size-14"
+                  render={
+                    <Link to={link.to}>
+                      <link.icon className="mx-auto" />
+                    </Link>
+                  }
+                ></NavigationMenuLink>
               </NavigationMenuItem>
             ))}
           </NavigationMenuList>
