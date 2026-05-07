@@ -9,68 +9,93 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as FocusRouteImport } from './routes/focus'
+import { Route as FocusIndexRouteImport } from './routes/focus/index'
+import { Route as FocusHistoryRouteImport } from './routes/focus/history'
 
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
+const FocusRoute = FocusRouteImport.update({
+  id: '/focus',
+  path: '/focus',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const FocusIndexRoute = FocusIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => FocusRoute,
+} as any)
+const FocusHistoryRoute = FocusHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => FocusRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/history': typeof HistoryRoute
+  '/focus': typeof FocusRouteWithChildren
+  '/focus/history': typeof FocusHistoryRoute
+  '/focus/': typeof FocusIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/history': typeof HistoryRoute
+  '/focus/history': typeof FocusHistoryRoute
+  '/focus': typeof FocusIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/history': typeof HistoryRoute
+  '/focus': typeof FocusRouteWithChildren
+  '/focus/history': typeof FocusHistoryRoute
+  '/focus/': typeof FocusIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history'
+  fullPaths: '/focus' | '/focus/history' | '/focus/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history'
-  id: '__root__' | '/' | '/history'
+  to: '/focus/history' | '/focus'
+  id: '__root__' | '/focus' | '/focus/history' | '/focus/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  HistoryRoute: typeof HistoryRoute
+  FocusRoute: typeof FocusRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
+    '/focus': {
+      id: '/focus'
+      path: '/focus'
+      fullPath: '/focus'
+      preLoaderRoute: typeof FocusRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/focus/': {
+      id: '/focus/'
       path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/focus/'
+      preLoaderRoute: typeof FocusIndexRouteImport
+      parentRoute: typeof FocusRoute
+    }
+    '/focus/history': {
+      id: '/focus/history'
+      path: '/history'
+      fullPath: '/focus/history'
+      preLoaderRoute: typeof FocusHistoryRouteImport
+      parentRoute: typeof FocusRoute
     }
   }
 }
 
+interface FocusRouteChildren {
+  FocusHistoryRoute: typeof FocusHistoryRoute
+  FocusIndexRoute: typeof FocusIndexRoute
+}
+
+const FocusRouteChildren: FocusRouteChildren = {
+  FocusHistoryRoute: FocusHistoryRoute,
+  FocusIndexRoute: FocusIndexRoute,
+}
+
+const FocusRouteWithChildren = FocusRoute._addFileChildren(FocusRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  HistoryRoute: HistoryRoute,
+  FocusRoute: FocusRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

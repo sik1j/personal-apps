@@ -11,7 +11,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { History } from "./-utils";
 import { formatTime } from "./-utils";
 
-export const Route = createFileRoute("/history")({
+export const Route = createFileRoute("/focus/history")({
   component: RouteComponent,
 });
 

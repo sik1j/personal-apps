@@ -12,7 +12,7 @@ import {
 } from "./-utils";
 import { formatTime } from "./-utils";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/focus/")({
   component: RouteComponent,
 });
 
