@@ -220,7 +220,7 @@ type TimerState =
   | { status: "overtime"; overTimeStartMillis: number };
 
 function FocusTimer() {
-  const [appState, setAppState] = useState<TimerState>({
+  const [appState, setAppState] = useLocalStorage<TimerState>("appState", {
     status: "setting-goal",
   });
 
