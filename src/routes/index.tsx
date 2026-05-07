@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNow } from "@/hooks/useNow";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { cn } from "@/lib/utils";
 import {
   millisToSecondsCeil,
   millisToSecondsFloor,
   addSession,
 } from "./-utils";
+import { formatTime } from "./-utils";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -18,14 +20,18 @@ type Session =
   | { type: "cancelled"; remainingMillis: number }
   | { type: "overtime"; overTimeFocusedMillis: number };
 
-function TimeDisplay({ timeSeconds }: { timeSeconds: number }) {
-  const safeSeconds = Math.max(0, timeSeconds);
-  const minsDisplay = Math.floor(safeSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const secsDisplay = (safeSeconds % 60).toString().padStart(2, "0");
-  const timeString = `${minsDisplay}:${secsDisplay}`;
-  return <div>{timeString}</div>;
+function TimeDisplay({
+  timeSeconds,
+  className,
+}: {
+  timeSeconds: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("tabular-nums tracking-tighter", className)}>
+      {formatTime(timeSeconds)}
+    </div>
+  );
 }
 
 function SetGoal({
@@ -38,22 +44,38 @@ function SetGoal({
   setGoalSeconds: (goalSeconds: number) => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col items-center gap-10">
+      <div className="flex items-center gap-6">
         <Button
+          variant="ghost"
+          size="icon"
+          className="size-16 rounded-full text-muted-foreground hover:text-foreground"
           onClick={() => setGoalSeconds(Math.max(0, goalSeconds - 5 * 60))}
         >
-          <ChevronLeft />
+          <ChevronLeft className="size-10" />
         </Button>
-        <TimeDisplay timeSeconds={goalSeconds} />
 
-        <Button onClick={() => setGoalSeconds(goalSeconds + 5 * 60)}>
-          <ChevronRight />
+        <TimeDisplay
+          timeSeconds={goalSeconds}
+          className="text-8xl font-bold md:text-[10rem]"
+        />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-16 rounded-full text-muted-foreground hover:text-foreground"
+          onClick={() => setGoalSeconds(goalSeconds + 5 * 60)}
+        >
+          <ChevronRight className="size-10" />
         </Button>
       </div>
 
-      <Button onClick={() => startTimer(Date.now() + goalSeconds * 1000)}>
-        <Play />
+      <Button
+        size="lg"
+        className="size-16 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
+        onClick={() => startTimer(Date.now() + goalSeconds * 1000)}
+      >
+        <Play className="size-8" />
       </Button>
     </div>
   );
@@ -81,24 +103,35 @@ function Running({
   }, [timeRemainingSeconds, endAtMillis, gotoOvertime]);
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-2">
-        <TimeDisplay timeSeconds={timeRemainingSeconds} />
-      </div>
+    <div className="flex flex-col items-center gap-10">
+      <TimeDisplay
+        timeSeconds={timeRemainingSeconds}
+        className="text-8xl font-bold md:text-[10rem]"
+      />
 
-      <Button onClick={() => pauseTimer(Math.max(0, endAtMillis - Date.now()))}>
-        <Pause />
-      </Button>
-      <Button
-        onClick={() =>
-          endSession({
-            type: "cancelled",
-            remainingMillis: Math.max(0, endAtMillis - Date.now()),
-          })
-        }
-      >
-        <X />
-      </Button>
+      <div className="flex gap-6">
+        <Button
+          variant="outline"
+          size="lg"
+          className="size-16 rounded-full border-2"
+          onClick={() => pauseTimer(Math.max(0, endAtMillis - Date.now()))}
+        >
+          <Pause className="size-8" />
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="size-16 rounded-full border-2"
+          onClick={() =>
+            endSession({
+              type: "cancelled",
+              remainingMillis: Math.max(0, endAtMillis - Date.now()),
+            })
+          }
+        >
+          <X className="size-8" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -113,22 +146,33 @@ function Paused({
   endSession: (session: Session) => number;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-2">
-        <TimeDisplay timeSeconds={millisToSecondsCeil(remainingMillis)} />
+    <div className="flex flex-col items-center gap-10">
+      <TimeDisplay
+        timeSeconds={millisToSecondsCeil(remainingMillis)}
+        className="text-8xl font-bold opacity-50 md:text-[10rem]"
+      />
+
+      <div className="flex gap-6">
+        <Button
+          variant="default"
+          size="lg"
+          className="size-16 rounded-full shadow-md"
+          onClick={() => resumeTimer(Date.now() + remainingMillis)}
+        >
+          <Play className="size-8" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="size-16 rounded-full border-2"
+          onClick={() =>
+            endSession({ type: "cancelled", remainingMillis: remainingMillis })
+          }
+        >
+          <X className="size-8" />
+        </Button>
       </div>
-
-      <Button onClick={() => resumeTimer(Date.now() + remainingMillis)}>
-        <Play />
-      </Button>
-
-      <Button
-        onClick={() =>
-          endSession({ type: "cancelled", remainingMillis: remainingMillis })
-        }
-      >
-        <X />
-      </Button>
     </div>
   );
 }
@@ -140,15 +184,22 @@ function Overtime({
   overTimeStartMillis: number;
   endSession: (session: Session) => number;
 }) {
-  const _tick = useNow();
+  useNow();
 
   return (
-    <div>
-      +
-      <TimeDisplay
-        timeSeconds={millisToSecondsFloor(Date.now() - overTimeStartMillis)}
-      />
+    <div className="flex flex-col items-center gap-10">
+      <div className="relative flex items-center justify-center">
+        <span className="absolute right-full mr-2 text-6xl font-bold md:text-8xl">
+          +
+        </span>
+        <TimeDisplay
+          timeSeconds={millisToSecondsFloor(Date.now() - overTimeStartMillis)}
+          className="text-8xl font-bold md:text-[10rem]"
+        />
+      </div>
       <Button
+        size="lg"
+        className="size-16 rounded-full shadow-lg bg-primary text-primary-foreground transition-transform hover:scale-105 hover:bg-primary/90 active:scale-95"
         onClick={() =>
           endSession({
             type: "overtime",
@@ -156,7 +207,7 @@ function Overtime({
           })
         }
       >
-        <Check />
+        <Check className="size-8" />
       </Button>
     </div>
   );
@@ -193,11 +244,10 @@ function FocusTimer() {
       case "overtime":
         focusedMillis = session.overTimeFocusedMillis + goalSeconds * 1000;
         break;
-      default: {
-        const _exhaustiveCheck: never = session;
-        focusedMillis = 0;
-        break;
-      }
+      default:
+        throw new Error(
+          `Unhandled session: ${JSON.stringify(session satisfies never)}`,
+        );
     }
 
     addSession(Date.now(), focusedMillis);
@@ -210,9 +260,10 @@ function FocusTimer() {
     return focusedMillis;
   }
 
+  let content;
   switch (appState.status) {
     case "setting-goal":
-      return (
+      content = (
         <SetGoal
           goalSeconds={goalSeconds}
           setGoalSeconds={setGoalSeconds}
@@ -224,8 +275,9 @@ function FocusTimer() {
           }}
         />
       );
+      break;
     case "running":
-      return (
+      content = (
         <Running
           endAtMillis={appState.endAtMillis}
           pauseTimer={(remainingMillis: number) =>
@@ -238,8 +290,9 @@ function FocusTimer() {
           endSession={endSession}
         />
       );
+      break;
     case "paused":
-      return (
+      content = (
         <Paused
           remainingMillis={appState.remainingMillis}
           resumeTimer={(endAtMillis: number) =>
@@ -251,19 +304,24 @@ function FocusTimer() {
           endSession={endSession}
         />
       );
-
+      break;
     case "overtime":
-      return (
+      content = (
         <Overtime
           overTimeStartMillis={appState.overTimeStartMillis}
           endSession={endSession}
         />
       );
-    default: {
-      const _exhaustiveCheck: never = appState;
-      return _exhaustiveCheck;
-    }
+      break;
+    default:
+      return appState satisfies never;
   }
+
+  return (
+    <div className="flex min-h-[70vh] flex-col items-center justify-center p-6">
+      {content}
+    </div>
+  );
 }
 
 function RouteComponent() {
