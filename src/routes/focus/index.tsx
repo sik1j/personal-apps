@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  Plus,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNow } from "@/hooks/useNow";
@@ -11,6 +19,14 @@ import {
   addSession,
 } from "./-utils";
 import { formatTime } from "./-utils";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 export const Route = createFileRoute("/focus/")({
   component: RouteComponent,
@@ -38,13 +54,63 @@ function SetGoal({
   startTimer,
   goalSeconds,
   setGoalSeconds,
+  tag,
+  setTag,
 }: {
   startTimer: (endAtMillis: number) => void;
   goalSeconds: number;
   setGoalSeconds: (goalSeconds: number) => void;
+  tag: string | null;
+  setTag: (tag: string | null) => void;
 }) {
+  const [tags, setTags] = useLocalStorage<string[]>("tags", []);
+  const tagObjects = tags.map((tag) => ({ value: tag, creatable: false }));
+
+  const [query, setQuery] = useState(tag ?? "");
+  const [value, setValue] = useState(
+    tagObjects.find((obj) => obj.value === tag) ?? null,
+  );
+
+  const trimmedQuery = query.trim();
+  if (
+    trimmedQuery &&
+    !tags.some((tag) => tag.toLowerCase() === trimmedQuery.toLowerCase())
+  ) {
+    tagObjects.push({ value: trimmedQuery, creatable: true });
+  }
+
   return (
     <div className="flex flex-col items-center gap-10">
+      <div>value: {value?.value}</div>
+      <div>query: {query}</div>
+      <Combobox
+        items={tagObjects}
+        itemToStringValue={(item) => item.value}
+        value={value}
+        onValueChange={(value) => {
+          if (value?.creatable) {
+            setTags((prev) => [...prev, trimmedQuery]);
+          }
+
+          setValue(value);
+          setTag(value ? value.value : null);
+        }}
+        inputValue={query}
+        onInputValueChange={setQuery}
+        autoHighlight
+      >
+        <ComboboxInput placeholder="Untagged" showClear />
+        <ComboboxContent>
+          <ComboboxEmpty>Start typing to create a new tag.</ComboboxEmpty>
+          <ComboboxList>
+            {(item) => (
+              <ComboboxItem key={item.value} value={item}>
+                {item.creatable ? <Plus /> : null} {item.value}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
       <div className="flex items-center gap-6">
         <Button
           variant="ghost"
@@ -225,6 +291,7 @@ function FocusTimer() {
   });
 
   const [goalSeconds, setGoalSeconds] = useLocalStorage("goalSeconds", 25 * 60);
+  const [tag, setTag] = useLocalStorage<string | null>("tag", null);
 
   const gotoOvertime = useCallback(
     (currentTimeMillis: number) =>
@@ -244,13 +311,13 @@ function FocusTimer() {
       case "overtime":
         focusedMillis = session.overTimeFocusedMillis + goalSeconds * 1000;
         break;
-      default:
-        throw new Error(
-          `Unhandled session: ${JSON.stringify(session satisfies never)}`,
-        );
+      default: {
+        const _exhaustive: never = session;
+        return _exhaustive;
+      }
     }
 
-    addSession(Date.now(), focusedMillis);
+    addSession(Date.now(), focusedMillis, tag);
 
     setAppState({
       status: "setting-goal",
@@ -267,6 +334,8 @@ function FocusTimer() {
         <SetGoal
           goalSeconds={goalSeconds}
           setGoalSeconds={setGoalSeconds}
+          tag={tag}
+          setTag={setTag}
           startTimer={(endAtMillis) => {
             setAppState({
               status: "running",

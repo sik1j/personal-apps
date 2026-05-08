@@ -10,6 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { History } from "./-utils";
 import { formatTime } from "./-utils";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/focus/history")({
   component: RouteComponent,
@@ -51,13 +52,14 @@ function RouteComponent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Time</TableHead>
+                <TableHead>Tag</TableHead>
                 <TableHead className="text-right">Time Focused</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
                 <TableCell
-                  colSpan={2}
+                  colSpan={3}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No history found. Start a focus session!
@@ -83,6 +85,7 @@ function RouteComponent() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Time</TableHead>
+                      <TableHead>Tag</TableHead>
                       <TableHead className="text-right">Time Focused</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -95,6 +98,18 @@ function RouteComponent() {
                             {
                               timeStyle: "short",
                             },
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {item.tag ? (
+                            <Badge variant="secondary">{item.tag}</Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-muted-foreground"
+                            >
+                              Untagged
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">

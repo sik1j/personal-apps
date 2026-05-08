@@ -18,15 +18,21 @@ export function millisToSecondsFloor(millis: number) {
 export type History = {
   endTimeMillis: number;
   focusedSeconds: number;
+  tag: string | null;
 }[];
 
-export function addSession(endTimeMillis: number, focusedMillis: number) {
+export function addSession(
+  endTimeMillis: number,
+  focusedMillis: number,
+  tag: string | null = null,
+) {
   const historyString = localStorage.getItem("history");
   const history = historyString ? (JSON.parse(historyString) as History) : [];
 
   history.push({
     endTimeMillis,
     focusedSeconds: millisToSecondsFloor(focusedMillis),
+    tag,
   });
   localStorage.setItem("history", JSON.stringify(history));
 }
