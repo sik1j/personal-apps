@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Check,
   ChevronLeft,
@@ -13,11 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useNow } from "@/hooks/useNow";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { cn } from "@/lib/utils";
-import {
-  millisToSecondsCeil,
-  millisToSecondsFloor,
-  addSession,
-} from "./-utils";
+import { millisToSecondsCeil, millisToSecondsFloor } from "./-utils";
 import { formatTime } from "./-utils";
 import {
   Combobox,
@@ -27,14 +23,11 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { useFocusStore } from "./-store";
 
 export const Route = createFileRoute("/focus/")({
   component: RouteComponent,
 });
-
-type Session =
-  | { type: "cancelled"; remainingMillis: number }
-  | { type: "overtime"; overTimeFocusedMillis: number };
 
 function TimeDisplay({
   timeSeconds,
@@ -50,40 +43,32 @@ function TimeDisplay({
   );
 }
 
-function SetGoal({
-  startTimer,
-  goalSeconds,
-  setGoalSeconds,
-  tag,
-  setTag,
-}: {
-  startTimer: (endAtMillis: number) => void;
-  goalSeconds: number;
-  setGoalSeconds: (goalSeconds: number) => void;
-  tag: string | null;
-  setTag: (tag: string | null) => void;
-}) {
-  const [tags, setTags] = useLocalStorage<string[]>("tags", []);
-  const tagObjects = tags.map((tag) => ({ value: tag, creatable: false }));
+function SetGoal() {
+  // const [tags, setTags] = useLocalStorage<string[]>("tags", []);
+  // const tagObjects = tags.map((tag) => ({ value: tag, creatable: false }));
 
-  const [query, setQuery] = useState(tag ?? "");
-  const [value, setValue] = useState(
-    tagObjects.find((obj) => obj.value === tag) ?? null,
-  );
+  // const [query, setQuery] = useState(tag ?? "");
+  // const [value, setValue] = useState(
+  //   tagObjects.find((obj) => obj.value === tag) ?? null,
+  // );
 
-  const trimmedQuery = query.trim();
-  if (
-    trimmedQuery &&
-    !tags.some((tag) => tag.toLowerCase() === trimmedQuery.toLowerCase())
-  ) {
-    tagObjects.push({ value: trimmedQuery, creatable: true });
-  }
+  // const trimmedQuery = query.trim();
+  // if (
+  //   trimmedQuery &&
+  //   !tags.some((tag) => tag.toLowerCase() === trimmedQuery.toLowerCase())
+  // ) {
+  //   tagObjects.push({ value: trimmedQuery, creatable: true });
+  // }
+
+  const goalSeconds = useFocusStore((state) => state.goalSeconds);
+  const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
+  const startTimer = useFocusStore((state) => state.startTimer);
 
   return (
     <div className="flex flex-col items-center gap-10">
-      <div>value: {value?.value}</div>
-      <div>query: {query}</div>
-      <Combobox
+      {/* <div>value: {value?.value}</div>
+      <div>query: {query}</div> */}
+      {/* <Combobox
         items={tagObjects}
         itemToStringValue={(item) => item.value}
         value={value}
@@ -110,7 +95,7 @@ function SetGoal({
             )}
           </ComboboxList>
         </ComboboxContent>
-      </Combobox>
+      </Combobox> */}
       <div className="flex items-center gap-6">
         <Button
           variant="ghost"
@@ -147,20 +132,14 @@ function SetGoal({
   );
 }
 
-function Running({
-  endAtMillis,
-  pauseTimer,
-  gotoOvertime,
-  endSession,
-}: {
-  endAtMillis: number;
-  pauseTimer: (timeRemainingMillis: number) => void;
-  gotoOvertime: (endAtMillis: number) => void;
-  endSession: (session: Session) => number;
-}) {
+function Running({ endAtMillis }: { endAtMillis: number }) {
   const now = useNow();
   const remainingMillis = Math.max(0, endAtMillis - now);
   const timeRemainingSeconds = millisToSecondsCeil(remainingMillis);
+
+  const pauseTimer = useFocusStore((state) => state.pauseTimer);
+  const gotoOvertime = useFocusStore((state) => state.gotoOvertime);
+  const endSession = useFocusStore((state) => state.endSession);
 
   useEffect(() => {
     if (timeRemainingSeconds <= 0) {
@@ -202,15 +181,10 @@ function Running({
   );
 }
 
-function Paused({
-  remainingMillis,
-  resumeTimer,
-  endSession,
-}: {
-  remainingMillis: number;
-  resumeTimer: (endAtMillis: number) => void;
-  endSession: (session: Session) => number;
-}) {
+function Paused({ remainingMillis }: { remainingMillis: number }) {
+  const resumeTimer = useFocusStore((state) => state.resumeTimer);
+  const endSession = useFocusStore((state) => state.endSession);
+
   return (
     <div className="flex flex-col items-center gap-10">
       <TimeDisplay
@@ -243,14 +217,9 @@ function Paused({
   );
 }
 
-function Overtime({
-  overTimeStartMillis,
-  endSession,
-}: {
-  overTimeStartMillis: number;
-  endSession: (session: Session) => number;
-}) {
+function Overtime({ overTimeStartMillis }: { overTimeStartMillis: number }) {
   useNow();
+  const endSession = useFocusStore((state) => state.endSession);
 
   return (
     <div className="flex flex-col items-center gap-10">
@@ -279,120 +248,32 @@ function Overtime({
   );
 }
 
-type TimerState =
-  | { status: "setting-goal" }
-  | { status: "running"; endAtMillis: number }
-  | { status: "paused"; remainingMillis: number }
-  | { status: "overtime"; overTimeStartMillis: number };
+function RouteComponent() {
+  const state = useFocusStore((state) => state.state);
 
-function FocusTimer() {
-  const [appState, setAppState] = useLocalStorage<TimerState>("appState", {
-    status: "setting-goal",
-  });
-
-  const [goalSeconds, setGoalSeconds] = useLocalStorage("goalSeconds", 25 * 60);
-  const [tag, setTag] = useLocalStorage<string | null>("tag", null);
-
-  const gotoOvertime = useCallback(
-    (currentTimeMillis: number) =>
-      setAppState({
-        status: "overtime",
-        overTimeStartMillis: currentTimeMillis,
-      }),
-    [],
-  );
-
-  function endSession(session: Session) {
-    let focusedMillis = 0;
-    switch (session.type) {
-      case "cancelled":
-        focusedMillis = goalSeconds * 1000 - session.remainingMillis;
-        break;
-      case "overtime":
-        focusedMillis = session.overTimeFocusedMillis + goalSeconds * 1000;
-        break;
-      default: {
-        const _exhaustive: never = session;
-        return _exhaustive;
-      }
-    }
-
-    addSession(Date.now(), focusedMillis, tag);
-
-    setAppState({
-      status: "setting-goal",
-    });
-
-    console.log("focusedSeconds", millisToSecondsFloor(focusedMillis));
-    return focusedMillis;
-  }
-
-  let content;
-  switch (appState.status) {
+  let component: React.ReactNode;
+  switch (state.status) {
     case "setting-goal":
-      content = (
-        <SetGoal
-          goalSeconds={goalSeconds}
-          setGoalSeconds={setGoalSeconds}
-          tag={tag}
-          setTag={setTag}
-          startTimer={(endAtMillis) => {
-            setAppState({
-              status: "running",
-              endAtMillis: endAtMillis,
-            });
-          }}
-        />
-      );
+      component = <SetGoal />;
       break;
     case "running":
-      content = (
-        <Running
-          endAtMillis={appState.endAtMillis}
-          pauseTimer={(remainingMillis: number) =>
-            setAppState({
-              status: "paused",
-              remainingMillis: remainingMillis,
-            })
-          }
-          gotoOvertime={gotoOvertime}
-          endSession={endSession}
-        />
-      );
+      component = <Running endAtMillis={state.endAtMillis} />;
       break;
     case "paused":
-      content = (
-        <Paused
-          remainingMillis={appState.remainingMillis}
-          resumeTimer={(endAtMillis: number) =>
-            setAppState({
-              status: "running",
-              endAtMillis: endAtMillis,
-            })
-          }
-          endSession={endSession}
-        />
-      );
+      component = <Paused remainingMillis={state.timeRemainingMillis} />;
       break;
     case "overtime":
-      content = (
-        <Overtime
-          overTimeStartMillis={appState.overTimeStartMillis}
-          endSession={endSession}
-        />
-      );
+      component = <Overtime overTimeStartMillis={state.endedAtMillis} />;
       break;
-    default:
-      return appState satisfies never;
+    default: {
+      const _exhaustive: never = state;
+      break;
+    }
   }
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center p-6">
-      {content}
+      {component}
     </div>
   );
-}
-
-function RouteComponent() {
-  return <FocusTimer />;
 }

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as FocusRouteImport } from './routes/focus'
 import { Route as FocusIndexRouteImport } from './routes/focus/index'
+import { Route as FocusStatsRouteImport } from './routes/focus/stats'
 import { Route as FocusHistoryRouteImport } from './routes/focus/history'
 
 const FocusRoute = FocusRouteImport.update({
@@ -23,6 +24,11 @@ const FocusIndexRoute = FocusIndexRouteImport.update({
   path: '/',
   getParentRoute: () => FocusRoute,
 } as any)
+const FocusStatsRoute = FocusStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => FocusRoute,
+} as any)
 const FocusHistoryRoute = FocusHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -32,24 +38,27 @@ const FocusHistoryRoute = FocusHistoryRouteImport.update({
 export interface FileRoutesByFullPath {
   '/focus': typeof FocusRouteWithChildren
   '/focus/history': typeof FocusHistoryRoute
+  '/focus/stats': typeof FocusStatsRoute
   '/focus/': typeof FocusIndexRoute
 }
 export interface FileRoutesByTo {
   '/focus/history': typeof FocusHistoryRoute
+  '/focus/stats': typeof FocusStatsRoute
   '/focus': typeof FocusIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/focus': typeof FocusRouteWithChildren
   '/focus/history': typeof FocusHistoryRoute
+  '/focus/stats': typeof FocusStatsRoute
   '/focus/': typeof FocusIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/focus' | '/focus/history' | '/focus/'
+  fullPaths: '/focus' | '/focus/history' | '/focus/stats' | '/focus/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/focus/history' | '/focus'
-  id: '__root__' | '/focus' | '/focus/history' | '/focus/'
+  to: '/focus/history' | '/focus/stats' | '/focus'
+  id: '__root__' | '/focus' | '/focus/history' | '/focus/stats' | '/focus/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -72,6 +81,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FocusIndexRouteImport
       parentRoute: typeof FocusRoute
     }
+    '/focus/stats': {
+      id: '/focus/stats'
+      path: '/stats'
+      fullPath: '/focus/stats'
+      preLoaderRoute: typeof FocusStatsRouteImport
+      parentRoute: typeof FocusRoute
+    }
     '/focus/history': {
       id: '/focus/history'
       path: '/history'
@@ -84,11 +100,13 @@ declare module '@tanstack/react-router' {
 
 interface FocusRouteChildren {
   FocusHistoryRoute: typeof FocusHistoryRoute
+  FocusStatsRoute: typeof FocusStatsRoute
   FocusIndexRoute: typeof FocusIndexRoute
 }
 
 const FocusRouteChildren: FocusRouteChildren = {
   FocusHistoryRoute: FocusHistoryRoute,
+  FocusStatsRoute: FocusStatsRoute,
   FocusIndexRoute: FocusIndexRoute,
 }
 

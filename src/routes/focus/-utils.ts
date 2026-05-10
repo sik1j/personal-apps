@@ -1,3 +1,13 @@
+export type History = {
+  endTimeMillis: number;
+  focusedSeconds: number;
+  tag: string | null;
+}[];
+
+export type Session =
+  | { type: "cancelled"; remainingMillis: number }
+  | { type: "overtime"; overTimeFocusedMillis: number };
+
 export function formatTime(totalSeconds: number) {
   const safeSeconds = Math.max(0, totalSeconds);
   const mins = Math.floor(safeSeconds / 60)
@@ -14,12 +24,6 @@ export function millisToSecondsCeil(millis: number) {
 export function millisToSecondsFloor(millis: number) {
   return Math.floor(millis / 1000);
 }
-
-export type History = {
-  endTimeMillis: number;
-  focusedSeconds: number;
-  tag: string | null;
-}[];
 
 export function addSession(
   endTimeMillis: number,

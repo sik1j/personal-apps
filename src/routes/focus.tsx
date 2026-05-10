@@ -22,7 +22,7 @@ function RouteComponent() {
       icon: Timer,
     },
     {
-      to: "..",
+      to: "/focus/stats",
       icon: ChartColumnBig,
     },
   ];
