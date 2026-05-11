@@ -7,17 +7,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createFileRoute } from "@tanstack/react-router";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { History } from "./-utils";
 import { formatTime } from "./-utils";
 import { Badge } from "@/components/ui/badge";
+import { useHistoryStore, type Session } from "./-store";
 
 export const Route = createFileRoute("/focus/history")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const [history, _setHistory] = useLocalStorage<History>("history", []);
+  const history = useHistoryStore((state) => state.history);
 
   // Sort history to show the most recent sessions first
   const sortedHistory = [...history].sort(
@@ -38,7 +37,7 @@ function RouteComponent() {
       acc[date].push(item);
       return acc;
     },
-    {} as Record<string, History>,
+    {} as Record<string, Session[]>,
   );
 
   return (

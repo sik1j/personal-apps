@@ -1,10 +1,4 @@
-export type History = {
-  endTimeMillis: number;
-  focusedSeconds: number;
-  tag: string | null;
-}[];
-
-export type Session =
+export type SessionType =
   | { type: "cancelled"; remainingMillis: number }
   | { type: "overtime"; overTimeFocusedMillis: number };
 
@@ -23,20 +17,4 @@ export function millisToSecondsCeil(millis: number) {
 
 export function millisToSecondsFloor(millis: number) {
   return Math.floor(millis / 1000);
-}
-
-export function addSession(
-  endTimeMillis: number,
-  focusedMillis: number,
-  tag: string | null = null,
-) {
-  const historyString = localStorage.getItem("history");
-  const history = historyString ? (JSON.parse(historyString) as History) : [];
-
-  history.push({
-    endTimeMillis,
-    focusedSeconds: millisToSecondsFloor(focusedMillis),
-    tag,
-  });
-  localStorage.setItem("history", JSON.stringify(history));
 }

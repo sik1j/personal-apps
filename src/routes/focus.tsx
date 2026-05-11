@@ -28,7 +28,7 @@ function RouteComponent() {
   ];
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col">
+    <div className="relative flex min-h-dvh flex-col">
       {/* Navigation Bar: Bottom on Mobile, Top on Desktop */}
       <header className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center  bg-background/80 p-3 backdrop-blur-md md:sticky md:top-0  ">
         <NavigationMenu>

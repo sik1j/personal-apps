@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { addSession, type Session } from "./-utils";
+import { millisToSecondsFloor, type SessionType } from "./-utils";
 import { persist } from "zustand/middleware";
 
 interface StoreState {
@@ -22,7 +22,7 @@ interface StoreActions {
   gotoOvertime: (endedAtMillis: number) => void;
   resumeTimer: (endAtMillis: number) => void;
 
-  endSession: (session: Session) => void;
+  endSession: (session: SessionType) => void;
 }
 
 export const useFocusStore = create<StoreState & StoreActions>()(
@@ -43,7 +43,7 @@ export const useFocusStore = create<StoreState & StoreActions>()(
       resumeTimer: (endAtMillis: number) =>
         set({ state: { status: "running", endAtMillis } }),
 
-      endSession: (session: Session) => {
+      endSession: (session: SessionType) => {
         let focusedMillis = 0;
         switch (session.type) {
           case "cancelled":
@@ -59,7 +59,11 @@ export const useFocusStore = create<StoreState & StoreActions>()(
           }
         }
 
-        addSession(Date.now(), focusedMillis, get().tag);
+        useHistoryStore.getState().addSession({
+          endTimeMillis: Date.now(),
+          focusedSeconds: millisToSecondsFloor(focusedMillis),
+          tag: get().tag,
+        });
 
         set({
           state: { status: "setting-goal" },
@@ -68,6 +72,33 @@ export const useFocusStore = create<StoreState & StoreActions>()(
     }),
     {
       name: "focus-store",
+    },
+  ),
+);
+
+export interface Session {
+  endTimeMillis: number;
+  focusedSeconds: number;
+  tag: string | null;
+}
+
+interface HistoryState {
+  history: Session[];
+}
+
+interface HistoryActions {
+  addSession: (session: Session) => void;
+}
+
+export const useHistoryStore = create<HistoryState & HistoryActions>()(
+  persist(
+    (set, get) => ({
+      history: [],
+      addSession: (session: Session) =>
+        set({ history: [...get().history, session] }),
+    }),
+    {
+      name: "history-store",
     },
   ),
 );
