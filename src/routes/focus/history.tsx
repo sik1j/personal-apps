@@ -46,27 +46,25 @@ function RouteComponent() {
         Session History
       </h1>
       {sortedHistory.length === 0 ? (
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Tag</TableHead>
-                <TableHead className="text-right">Time Focused</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No history found. Start a focus session!
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Time</TableHead>
+              <TableHead>Tag</TableHead>
+              <TableHead className="text-right">Time Focused</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell
+                colSpan={3}
+                className="h-24 text-center text-muted-foreground"
+              >
+                No history found. Start a focus session!
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       ) : (
         <div className="space-y-8">
           {Object.entries(groupedHistory).map(([date, items]) => (
@@ -79,46 +77,44 @@ function RouteComponent() {
                   )}
                 </p>
               </div>
-              <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Tag</TableHead>
-                      <TableHead className="text-right">Time Focused</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Tag</TableHead>
+                    <TableHead className="text-right">Time Focused</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow key={item.endTimeMillis}>
+                      <TableCell className="font-medium">
+                        {new Date(item.endTimeMillis).toLocaleTimeString(
+                          undefined,
+                          {
+                            timeStyle: "short",
+                          },
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {item.tag ? (
+                          <Badge variant="secondary">{item.tag}</Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-muted-foreground"
+                          >
+                            Untagged
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatTime(item.focusedSeconds)}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((item) => (
-                      <TableRow key={item.endTimeMillis}>
-                        <TableCell className="font-medium">
-                          {new Date(item.endTimeMillis).toLocaleTimeString(
-                            undefined,
-                            {
-                              timeStyle: "short",
-                            },
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {item.tag ? (
-                            <Badge variant="secondary">{item.tag}</Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-muted-foreground"
-                            >
-                              Untagged
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatTime(item.focusedSeconds)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ))}
         </div>

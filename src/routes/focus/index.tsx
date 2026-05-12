@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -42,59 +42,88 @@ function TimeDisplay({
   );
 }
 
-function SetGoal() {
-  // const [tags, setTags] = useLocalStorage<string[]>("tags", []);
-  // const tagObjects = tags.map((tag) => ({ value: tag, creatable: false }));
+type ComboboxItem = {
+  value: string;
+  creatable: boolean;
+};
 
-  // const [query, setQuery] = useState(tag ?? "");
-  // const [value, setValue] = useState(
-  //   tagObjects.find((obj) => obj.value === tag) ?? null,
-  // );
+function TagCombobox() {
+  const selectableTags = useFocusStore((state) => state.selectableTags);
+  const currentTag = useFocusStore((state) => state.currentTag);
+  const addSelectableTag = useFocusStore((state) => state.addSelectableTag);
+  const setCurrentTag = useFocusStore((state) => state.setCurrentTag);
 
-  // const trimmedQuery = query.trim();
-  // if (
-  //   trimmedQuery &&
-  //   !tags.some((tag) => tag.toLowerCase() === trimmedQuery.toLowerCase())
-  // ) {
-  //   tagObjects.push({ value: trimmedQuery, creatable: true });
-  // }
+  const [query, setQuery] = useState(currentTag ?? "");
+  const trimmedQuery = query.trim();
 
-  const goalSeconds = useFocusStore((state) => state.goalSeconds);
-  const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
-  const startTimer = useFocusStore((state) => state.startTimer);
+  const comboboxValue: ComboboxItem | null = currentTag
+    ? {
+        value: currentTag,
+        creatable: false,
+      }
+    : null;
+
+  let items: ComboboxItem[] = selectableTags.map((tag) => ({
+    value: tag,
+    creatable: false,
+  }));
+
+  if (trimmedQuery && !selectableTags.includes(trimmedQuery)) {
+    items = [
+      ...items,
+      {
+        value: trimmedQuery,
+        creatable: true,
+      },
+    ];
+  }
 
   return (
-    <div className="flex flex-col items-center gap-10">
-      {/* <div>value: {value?.value}</div>
-      <div>query: {query}</div> */}
-      {/* <Combobox
-        items={tagObjects}
-        itemToStringValue={(item) => item.value}
-        value={value}
-        onValueChange={(value) => {
+    <>
+      <div>Trimmed Query: {trimmedQuery}</div>
+      <div>Query: {query}</div>
+      <div>Value: {comboboxValue?.value ?? "No value"}</div>
+      <Combobox
+        items={items}
+        value={comboboxValue}
+        onValueChange={(value: ComboboxItem | null) => {
           if (value?.creatable) {
-            setTags((prev) => [...prev, trimmedQuery]);
+            addSelectableTag(trimmedQuery);
           }
-
-          setValue(value);
-          setTag(value ? value.value : null);
+          setCurrentTag(value?.value ?? null);
         }}
         inputValue={query}
-        onInputValueChange={setQuery}
+        onInputValueChange={(value) => {
+          console.log("onInputValueChange", value);
+          setQuery(value);
+        }}
         autoHighlight
       >
         <ComboboxInput placeholder="Untagged" showClear />
         <ComboboxContent>
           <ComboboxEmpty>Start typing to create a new tag.</ComboboxEmpty>
           <ComboboxList>
-            {(item) => (
+            {(item: ComboboxItem) => (
               <ComboboxItem key={item.value} value={item}>
-                {item.creatable ? <Plus /> : null} {item.value}
+                <Plus className={item.creatable ? "" : "invisible"} />
+                {item.value}
               </ComboboxItem>
             )}
           </ComboboxList>
         </ComboboxContent>
-      </Combobox> */}
+      </Combobox>
+    </>
+  );
+}
+
+function SetGoal() {
+  const goalSeconds = useFocusStore((state) => state.goalSeconds);
+  const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
+  const startTimer = useFocusStore((state) => state.startTimer);
+
+  return (
+    <div className="flex flex-col items-center gap-10">
+      <TagCombobox />
       <div className="flex items-center gap-6">
         <Button
           variant="ghost"

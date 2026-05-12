@@ -3,8 +3,11 @@ import { millisToSecondsFloor, type SessionType } from "./-utils";
 import { persist } from "zustand/middleware";
 
 interface StoreState {
+  currentTag: string | null;
+  selectableTags: string[];
+
   goalSeconds: number;
-  tag: string | null;
+
   state:
     | {
         status: "setting-goal";
@@ -15,6 +18,9 @@ interface StoreState {
 }
 
 interface StoreActions {
+  addSelectableTag: (tag: string) => void;
+  setCurrentTag: (tag: string | null) => void;
+
   setGoalSeconds: (goalSeconds: number) => void;
 
   startTimer: (endAtMillis: number) => void;
@@ -29,9 +35,14 @@ export const useFocusStore = create<StoreState & StoreActions>()(
   persist(
     (set, get) => ({
       goalSeconds: 0,
-      tag: null,
+      selectableTags: [],
+      currentTag: null,
+
       state: { status: "setting-goal" },
 
+      addSelectableTag: (tag: string) =>
+        set({ selectableTags: [...get().selectableTags, tag] }),
+      setCurrentTag: (tag: string | null) => set({ currentTag: tag }),
       setGoalSeconds: (goalSeconds: number) => set({ goalSeconds }),
 
       startTimer: (endAtMillis: number) =>
@@ -62,7 +73,7 @@ export const useFocusStore = create<StoreState & StoreActions>()(
         useHistoryStore.getState().addSession({
           endTimeMillis: Date.now(),
           focusedSeconds: millisToSecondsFloor(focusedMillis),
-          tag: get().tag,
+          tag: get().currentTag,
         });
 
         set({
