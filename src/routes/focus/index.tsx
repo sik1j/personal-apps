@@ -23,6 +23,8 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { useFocusStore } from "./-store";
+import { useSound } from "use-sound";
+import halfLifeAlarm from "./-half-life-alarm.mp3";
 
 export const Route = createFileRoute("/focus/")({
   component: RouteComponent,
@@ -247,7 +249,12 @@ function Paused({ remainingMillis }: { remainingMillis: number }) {
 
 function Overtime({ overTimeStartMillis }: { overTimeStartMillis: number }) {
   useNow();
+  const [alarm] = useSound(halfLifeAlarm, { volume: 0.25 });
   const endSession = useFocusStore((state) => state.endSession);
+
+  useEffect(() => {
+    alarm();
+  }, [alarm]);
 
   return (
     <div className="flex flex-col items-center gap-10">
