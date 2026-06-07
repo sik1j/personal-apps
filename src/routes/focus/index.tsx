@@ -6,6 +6,8 @@ import {
   Pause,
   Play,
   Plus,
+  Volume2,
+  VolumeOff,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,8 @@ import {
 } from "@/components/ui/combobox";
 import { useFocusStore } from "./-store";
 import { useSound } from "use-sound";
-import halfLifeAlarm from "./-half-life-alarm.mp3";
+import alarm from "./-alarm.mp3";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/focus/")({
   component: RouteComponent,
@@ -83,9 +86,6 @@ function TagCombobox() {
 
   return (
     <>
-      <div>Trimmed Query: {trimmedQuery}</div>
-      <div>Query: {query}</div>
-      <div>Value: {comboboxValue?.value ?? "No value"}</div>
       <Combobox
         items={items}
         value={comboboxValue}
@@ -119,14 +119,63 @@ function TagCombobox() {
   );
 }
 
-function SetGoal({ initializeAlarm }: { initializeAlarm: () => void }) {
+function SetGoal({
+  playAlarm,
+  pauseAlarm,
+}: {
+  playAlarm: () => void;
+  pauseAlarm: () => void;
+}) {
   const goalSeconds = useFocusStore((state) => state.goalSeconds);
   const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
   const startTimer = useFocusStore((state) => state.startTimer);
 
+  const setVolume = useFocusStore((state) => state.setVolume);
+  const volume = useFocusStore((state) => state.volume);
+  const setIsAlarmMuted = useFocusStore((state) => state.setIsAlarmMuted);
+  const isAlarmMuted = useFocusStore((state) => state.isAlarmMuted);
+
   setGoalSeconds(60);
   return (
     <div className="flex flex-col items-center gap-10">
+      <div className="flex flex-col gap-2 items-center">
+        <div>Is muted: {isAlarmMuted ? "Yes" : "No"}</div>
+        <Button
+          className="size-12"
+          onClick={() => {
+            setIsAlarmMuted(!isAlarmMuted);
+          }}
+        >
+          {isAlarmMuted ? (
+            <VolumeOff className="size-6" />
+          ) : (
+            <Volume2 className="size-6" />
+          )}
+        </Button>
+        <Input
+          type="number"
+          max={100}
+          min={0}
+          value={volume == 0 ? "" : volume.toString()}
+          onChange={(e) => {
+            let value = parseInt(e.target.value);
+            if (isNaN(value)) value = 0;
+
+            playAlarm();
+
+            if (value < 0) {
+              setVolume(0);
+              return;
+            }
+            if (value > 100) {
+              setVolume(100);
+              return;
+            }
+
+            setVolume(value);
+          }}
+        />
+      </div>
       <TagCombobox />
       <div className="flex items-center gap-6">
         <Button
@@ -159,10 +208,8 @@ function SetGoal({ initializeAlarm }: { initializeAlarm: () => void }) {
         onClick={() => {
           startTimer(Date.now() + goalSeconds * 1000);
 
-          // HACKY: sound is played and insta-paused on button press
-          // to 'bless' (let the sound play later with no button press)
-          // the audio object by the browser
-          initializeAlarm();
+          playAlarm();
+          pauseAlarm();
         }}
       >
         <Play className="size-8" />
@@ -198,7 +245,7 @@ function Running({
       gotoOvertime(endAtMillis);
       playAlarm();
     }
-  }, [timeRemainingSeconds, endAtMillis, gotoOvertime, notify]);
+  }, [timeRemainingSeconds, endAtMillis, gotoOvertime, notify, playAlarm]);
 
   return (
     <div className="flex flex-col items-center gap-10">
@@ -304,26 +351,20 @@ function Overtime({ overTimeStartMillis }: { overTimeStartMillis: number }) {
 }
 
 function RouteComponent() {
-  const [playAlarm, { pause: pauseAlarm }] = useSound(halfLifeAlarm, {
-    volume: 0.25,
+  const volume = useFocusStore((state) => state.volume);
+  const isAlarmMuted = useFocusStore((state) => state.isAlarmMuted);
+
+  const [playAlarm, { pause: pauseAlarm }] = useSound(alarm, {
+    volume: isAlarmMuted ? 0 : volume / 100,
     interrupt: true,
   });
+
   const state = useFocusStore((state) => state.state);
 
   let component: React.ReactNode;
   switch (state.status) {
     case "setting-goal":
-      component = (
-        <SetGoal
-          // HACKY: sound is played and insta-paused on button press
-          // to 'bless' (let the sound play later with no button press)
-          // the audio object by the browser
-          initializeAlarm={() => {
-            playAlarm();
-            pauseAlarm();
-          }}
-        />
-      );
+      component = <SetGoal playAlarm={playAlarm} pauseAlarm={pauseAlarm} />;
       break;
     case "running":
       component = (

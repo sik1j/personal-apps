@@ -7,6 +7,8 @@ interface StoreState {
   selectableTags: string[];
 
   goalSeconds: number;
+  volume: number;
+  isAlarmMuted: boolean;
 
   state:
     | {
@@ -20,6 +22,8 @@ interface StoreState {
 interface StoreActions {
   addSelectableTag: (tag: string) => void;
   setCurrentTag: (tag: string | null) => void;
+  setVolume: (volume: number) => void;
+  setIsAlarmMuted: (isAlarmMuted: boolean) => void;
 
   setGoalSeconds: (goalSeconds: number) => void;
 
@@ -35,15 +39,21 @@ export const useFocusStore = create<StoreState & StoreActions>()(
   persist(
     (set, get) => ({
       goalSeconds: 0,
+      volume: 0,
+      isAlarmMuted: true,
+
       selectableTags: [],
       currentTag: null,
 
       state: { status: "setting-goal" },
 
+      setGoalSeconds: (goalSeconds: number) => set({ goalSeconds }),
+      setVolume: (volume: number) => set({ volume }),
+      setIsAlarmMuted: (isAlarmMuted: boolean) => set({ isAlarmMuted }),
+
       addSelectableTag: (tag: string) =>
         set({ selectableTags: [...get().selectableTags, tag] }),
       setCurrentTag: (tag: string | null) => set({ currentTag: tag }),
-      setGoalSeconds: (goalSeconds: number) => set({ goalSeconds }),
 
       startTimer: (endAtMillis: number) =>
         set({ state: { status: "running", endAtMillis } }),
