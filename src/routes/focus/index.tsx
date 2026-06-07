@@ -14,7 +14,7 @@ import { useNow } from "@/hooks/useNow";
 import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import { millisToSecondsCeil, millisToSecondsFloor } from "./-utils";
-import { formatTime } from "./-utils";
+import { formatTimeMMSS } from "./-utils";
 import {
   Combobox,
   ComboboxContent,
@@ -40,7 +40,7 @@ function TimeDisplay({
 }) {
   return (
     <div className={cn("tabular-nums tracking-tighter", className)}>
-      {formatTime(timeSeconds)}
+      {formatTimeMMSS(timeSeconds)}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createFileRoute } from "@tanstack/react-router";
-import { formatTime } from "./-utils";
+import { formatTimeHHMM, formatTimeMMSS } from "./-utils";
 import { Badge } from "@/components/ui/badge";
 import { useHistoryStore, type Session } from "./-store";
 
@@ -72,7 +72,7 @@ function RouteComponent() {
               <div className="mb-4 flex items-baseline justify-between">
                 <h2 className="text-xl font-semibold tracking-tight">{date}</h2>
                 <p className="text-sm font-medium text-muted-foreground">
-                  {formatTime(
+                  {formatTimeHHMM(
                     items.reduce((acc, item) => acc + item.focusedSeconds, 0),
                   )}
                 </p>
@@ -109,7 +109,7 @@ function RouteComponent() {
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatTime(item.focusedSeconds)}
+                        {formatTimeMMSS(item.focusedSeconds)}
                       </TableCell>
                     </TableRow>
                   ))}
