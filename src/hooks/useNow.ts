@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { setInterval, clearInterval } from "worker-timers";
 
 export function useNow(intervalMs: number = 500) {
   const [now, setNow] = useState(Date.now());

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNow } from "@/hooks/useNow";
+import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import { millisToSecondsCeil, millisToSecondsFloor } from "./-utils";
 import { formatTime } from "./-utils";
@@ -123,6 +124,7 @@ function SetGoal() {
   const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
   const startTimer = useFocusStore((state) => state.startTimer);
 
+  setGoalSeconds(60);
   return (
     <div className="flex flex-col items-center gap-10">
       <TagCombobox />
@@ -164,6 +166,8 @@ function SetGoal() {
 
 function Running({ endAtMillis }: { endAtMillis: number }) {
   const now = useNow();
+  const { requestPermission, notify } = useNotifications();
+
   const remainingMillis = Math.max(0, endAtMillis - now);
   const timeRemainingSeconds = millisToSecondsCeil(remainingMillis);
 
@@ -172,10 +176,15 @@ function Running({ endAtMillis }: { endAtMillis: number }) {
   const endSession = useFocusStore((state) => state.endSession);
 
   useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
+
+  useEffect(() => {
     if (timeRemainingSeconds <= 0) {
+      notify("⏱️ Session Over!", { body: "The time will keep ticking." });
       gotoOvertime(endAtMillis);
     }
-  }, [timeRemainingSeconds, endAtMillis, gotoOvertime]);
+  }, [timeRemainingSeconds, endAtMillis, gotoOvertime, notify]);
 
   return (
     <div className="flex flex-col items-center gap-10">
