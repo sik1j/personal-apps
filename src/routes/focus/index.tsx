@@ -135,12 +135,11 @@ function SetGoal({
   const setIsAlarmMuted = useFocusStore((state) => state.setIsAlarmMuted);
   const isAlarmMuted = useFocusStore((state) => state.isAlarmMuted);
 
-  setGoalSeconds(60);
   return (
     <div className="flex flex-col items-center gap-10">
       <div className="flex flex-col gap-2 items-center">
-        <div>Is muted: {isAlarmMuted ? "Yes" : "No"}</div>
         <Button
+          variant="ghost"
           className="size-12"
           onClick={() => {
             setIsAlarmMuted(!isAlarmMuted);
