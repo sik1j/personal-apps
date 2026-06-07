@@ -119,7 +119,7 @@ function TagCombobox() {
   );
 }
 
-function SetGoal() {
+function SetGoal({ initializeAlarm }: { initializeAlarm: () => void }) {
   const goalSeconds = useFocusStore((state) => state.goalSeconds);
   const setGoalSeconds = useFocusStore((state) => state.setGoalSeconds);
   const startTimer = useFocusStore((state) => state.startTimer);
@@ -156,7 +156,14 @@ function SetGoal() {
       <Button
         size="lg"
         className="size-16 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
-        onClick={() => startTimer(Date.now() + goalSeconds * 1000)}
+        onClick={() => {
+          startTimer(Date.now() + goalSeconds * 1000);
+
+          // HACKY: sound is played and insta-paused on button press
+          // to 'bless' (let the sound play later with no button press)
+          // the audio object by the browser
+          initializeAlarm();
+        }}
       >
         <Play className="size-8" />
       </Button>
@@ -164,7 +171,13 @@ function SetGoal() {
   );
 }
 
-function Running({ endAtMillis }: { endAtMillis: number }) {
+function Running({
+  endAtMillis,
+  playAlarm,
+}: {
+  endAtMillis: number;
+  playAlarm: () => void;
+}) {
   const now = useNow();
   const { requestPermission, notify } = useNotifications();
 
@@ -183,6 +196,7 @@ function Running({ endAtMillis }: { endAtMillis: number }) {
     if (timeRemainingSeconds <= 0) {
       notify("⏱️ Session Over!", { body: "The time will keep ticking." });
       gotoOvertime(endAtMillis);
+      playAlarm();
     }
   }, [timeRemainingSeconds, endAtMillis, gotoOvertime, notify]);
 
@@ -236,7 +250,9 @@ function Paused({ remainingMillis }: { remainingMillis: number }) {
           variant="default"
           size="lg"
           className="size-16 rounded-full shadow-md"
-          onClick={() => resumeTimer(Date.now() + remainingMillis)}
+          onClick={() => {
+            resumeTimer(Date.now() + remainingMillis);
+          }}
         >
           <Play className="size-8" />
         </Button>
@@ -258,12 +274,7 @@ function Paused({ remainingMillis }: { remainingMillis: number }) {
 
 function Overtime({ overTimeStartMillis }: { overTimeStartMillis: number }) {
   useNow();
-  const [alarm] = useSound(halfLifeAlarm, { volume: 0.25 });
   const endSession = useFocusStore((state) => state.endSession);
-
-  useEffect(() => {
-    alarm();
-  }, [alarm]);
 
   return (
     <div className="flex flex-col items-center gap-10">
@@ -293,15 +304,31 @@ function Overtime({ overTimeStartMillis }: { overTimeStartMillis: number }) {
 }
 
 function RouteComponent() {
+  const [playAlarm, { pause: pauseAlarm }] = useSound(halfLifeAlarm, {
+    volume: 0.25,
+    interrupt: true,
+  });
   const state = useFocusStore((state) => state.state);
 
   let component: React.ReactNode;
   switch (state.status) {
     case "setting-goal":
-      component = <SetGoal />;
+      component = (
+        <SetGoal
+          // HACKY: sound is played and insta-paused on button press
+          // to 'bless' (let the sound play later with no button press)
+          // the audio object by the browser
+          initializeAlarm={() => {
+            playAlarm();
+            pauseAlarm();
+          }}
+        />
+      );
       break;
     case "running":
-      component = <Running endAtMillis={state.endAtMillis} />;
+      component = (
+        <Running endAtMillis={state.endAtMillis} playAlarm={playAlarm} />
+      );
       break;
     case "paused":
       component = <Paused remainingMillis={state.timeRemainingMillis} />;
